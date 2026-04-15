@@ -44,9 +44,8 @@ export default function Classes() {
   const fetchCourses = async () => {
     try {
       setLoading(true)
-      const res = await fetch(`${API}/courses`)
-      const data = await res.json()
-      if (data.success) setCourses(data.data || [])
+      const res = await API.get('/courses')
+      if (res.data.success) setCourses(res.data.data || [])
     } catch (err) {
       console.error('Courses fetch error:', err)
     } finally {
@@ -56,9 +55,8 @@ export default function Classes() {
 
   const fetchDepartments = async () => {
     try {
-      const res = await fetch(`${API}/departments`)
-      const data = await res.json()
-      if (data.success) setDepartments(data.data)
+      const res = await API.get('/departments')
+      if (res.data.success) setDepartments(res.data.data)
     } catch (err) {
       console.error('Departments fetch error:', err)
     }
@@ -71,12 +69,11 @@ export default function Classes() {
         departmentId: courseId,
         semester: courseId
       })
-      const res = await fetch(`${API}/students?${params}`)
-      const data = await res.json()
-      if (data.success) {
-        setStudents(data.data || [])
+      const res = await API.get(`/students?${params}`)
+      if (res.data.success) {
+        setStudents(res.data.data || [])
       } else {
-        console.error('API Error:', data.message)
+        console.error('API Error:', res.data.message)
         setStudents([])
       }
     } catch (err) {
@@ -95,43 +92,33 @@ export default function Classes() {
     }
 
     try {
-      const res = await fetch(`${API}/courses`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: courseForm.name,
-          code: courseForm.code,
-          departmentId: courseForm.departmentId,
-          semester: Number(courseForm.semester),
-          batch: courseForm.batch || '',
-          academicYear: courseForm.academicYear || '2024-25',
-          totalStudents: 0
-        })
+      const res = await API.post('/courses', {
+        name: courseForm.name,
+        code: courseForm.code,
+        departmentId: courseForm.departmentId,
+        semester: Number(courseForm.semester),
+        batch: courseForm.batch || '',
+        academicYear: courseForm.academicYear || '2024-25',
+        totalStudents: 0
       })
 
-      const data = await res.json()
-
-      if (data.success) {
+      if (res.data.success) {
         setCourseForm({ name: '', code: '', departmentId: '', semester: '', batch: '', academicYear: '' })
         setShowAddCourse(false)
         fetchCourses()
       } else {
-        alert('Error: ' + data.message)
+        alert('Error: ' + res.data.message)
       }
     } catch (err) {
-      alert('Cannot connect to server. Make sure backend is running on port 5001')
+      alert('Cannot connect to server. Make sure backend is running on port 5002')
       console.error(err)
     }
   }
 
   const handleEditCourse = async () => {
     try {
-      const res = await fetch(`${API}/courses/${editingCourse._id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(courseForm)
-      })
-      if (res.ok) {
+      const res = await API.put(`/courses/${editingCourse._id}`, courseForm)
+      if (res.data.success) {
         setCourseForm({ name: '', code: '', departmentId: '', semester: '', batch: '', academicYear: '' })
         setEditingCourse(null)
         setShowAddCourse(false)
@@ -145,7 +132,7 @@ export default function Classes() {
   const handleDeleteCourse = async (courseId) => {
     if (confirm('Are you sure you want to delete this course?')) {
       try {
-        await fetch(`${API}/courses/${courseId}`, { method: 'DELETE' })
+        await API.delete(`/courses/${courseId}`)
         fetchCourses()
       } catch (err) {
         console.error('Error deleting course:', err)
@@ -173,23 +160,18 @@ export default function Classes() {
       return
     }
     try {
-      const res = await fetch(`${API}/students`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name:         studentForm.name,
-          rollNumber:   studentForm.rollNumber,
-          email:        studentForm.email,
-          semester:     Number(studentForm.semester),
-          batch:        studentForm.batch,
-          section:      studentForm.section,
-          courseIds:    [selectedCourse._id],
-          departmentId: selectedCourse.departmentId?._id || selectedCourse.departmentId,
-          isActive:     true
-        })
+      const res = await API.post('/students', {
+        name:         studentForm.name,
+        rollNumber:   studentForm.rollNumber,
+        email:        studentForm.email,
+        semester:     Number(studentForm.semester),
+        batch:        studentForm.batch,
+        section:      studentForm.section,
+        courseIds:    [selectedCourse._id],
+        departmentId: selectedCourse.departmentId?._id || selectedCourse.departmentId,
+        isActive:     true
       })
-      const data = await res.json()
-      if (data.success) {
+      if (res.data.success) {
         setStudentForm({ name: '', rollNumber: '', email: '', semester: '', batch: '', section: '' })
         setAddingStudent(false)
         fetchStudents(selectedCourse._id)
@@ -200,7 +182,7 @@ export default function Classes() {
             : c
         ))
       } else {
-        alert('Error: ' + data.message)
+        alert('Error: ' + res.data.message)
       }
     } catch (err) {
       alert('Server error: ' + err.message)
@@ -210,12 +192,9 @@ export default function Classes() {
   const enrollAllStudents = async () => {
     if (!selectedCourse) return
     try {
-      const res = await fetch(`${API}/students/enroll-all/${selectedCourse._id}`, {
-        method: 'POST'
-      })
-      const data = await res.json()
-      if (data.success) {
-        alert(data.message)
+      const res = await API.post(`/students/enroll-all/${selectedCourse._id}`)
+      if (res.data.success) {
+        alert(res.data.message)
         fetchStudents(selectedCourse._id)
       }
     } catch (err) {
@@ -226,11 +205,8 @@ export default function Classes() {
   const handleRemoveStudent = async (studentId) => {
     if (!confirm('Remove this student from the course?')) return
     try {
-      const res = await fetch(`${API}/students/${studentId}`, {
-        method: 'DELETE'
-      })
-      const data = await res.json()
-      if (data.success) fetchStudents(selectedCourse._id)
+      const res = await API.delete(`/students/${studentId}`)
+      if (res.data.success) fetchStudents(selectedCourse._id)
     } catch (err) {
       console.error(err)
     }
