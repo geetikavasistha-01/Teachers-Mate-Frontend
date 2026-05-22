@@ -22,7 +22,7 @@
 
   <br/>
 
-  [Live Demo](https://teachers-mate.vercel.app) · [Backend Repository](https://github.com/your-org/teachers-mate-backend) · [Report a Bug](https://github.com/your-org/teachers-mate-frontend/issues) · [Request a Feature](https://github.com/your-org/teachers-mate-frontend/issues)
+  [Live Demo](https://teachers-mate-frontend-qokh.vercel.app/) · [Backend Repository](https://github.com/geetikavasistha-01/Teachers-Mate-Backend) · [Report a Bug](https://github.com/geetikavasistha-01/Teachers-Mate-Frontend/issues) · [Request a Feature](https://github.com/geetikavasistha-01/Teachers-Mate-Frontend/issues)
 
   <br/>
 </div>
@@ -153,7 +153,7 @@ frontend/
 
 - **Node.js** `>= 18.0.0`
 - **npm** `>= 9.0.0`
-- A running instance of the [Teachers-Mate Backend](https://github.com/your-org/teachers-mate-backend) (defaults to `http://localhost:10000`)
+- A running instance of the [Teachers-Mate Backend](https://github.com/geetikavasistha-01/Teachers-Mate-Backend) (defaults to `http://localhost:10000`)
 
 ### Installation
 
@@ -262,17 +262,3 @@ npm run lint
 ```
 
 Please keep PRs focused — one feature or fix per pull request makes review much faster.
-
----
-
-## License
-
-Distributed under the [MIT License](LICENSE). Use it, fork it, build on it.
-
----
-
-<div align="center">
-  <br/>
-  <p>Built with care for the people who shape the next generation.</p>
-  <br/>
-</div>
