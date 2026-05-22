@@ -1,18 +1,17 @@
-
-The professional, production-grade README.md for your **Teachers-Mate Frontend** has been successfully compiled.
-
-It covers everything from architectural layout to deployment mechanics, perfectly mapping to your exact repository structure.
-
-```markdown
 <div align="center">
   <br />
-  <img src="public/teacher-svgrepo-com.svg" alt="Teachers-Mate Logo" width="72" height="72" />
-  <h1>Teachers-Mate &mdash; Frontend</h1>
-  <p><em>Educator's Administrative Analytics Engine</em></p>
+  <img src="public/teacher-svgrepo-com.svg" alt="Teachers-Mate Logo" width="80" height="80" />
+
+  <h1>Teachers-Mate — Frontend</h1>
+
+  <p><em>Because teachers deserve tools that work as hard as they do.</em></p>
+
   <p>
-    A production-grade, decoupled React SPA that eliminates the friction of manual attendance management — turning session-by-session records into actionable engagement analytics through a fast, accessible, and fully responsive interface.
+    A production-grade React SPA that turns the daily grind of attendance tracking into<br/>
+    meaningful engagement analytics — fast, accessible, and built for the classroom.
   </p>
-  <br />
+
+  <br/>
 
   [![CI/CD](https://img.shields.io/github/actions/workflow/status/your-org/teachers-mate-frontend/ci.yml?label=CI%2FCD&style=flat-square&logo=github)](https://github.com/your-org/teachers-mate-frontend/actions)
   [![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-000000?style=flat-square&logo=vercel)](https://vercel.com)
@@ -21,236 +20,198 @@ It covers everything from architectural layout to deployment mechanics, perfectl
   [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.x-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 
-  <br />
-  <a href="https://teachers-mate.vercel.app">Live Demo</a> &nbsp;·&nbsp; 
-  <a href="https://github.com/your-org/teachers-mate-backend">Backend Repository</a> &nbsp;·&nbsp; 
-  <a href="https://github.com/your-org/teachers-mate-frontend/issues">Report a Bug</a> &nbsp;·&nbsp; 
-  <a href="https://github.com/your-org/teachers-mate-frontend/issues">Request a Feature</a>
-  <br />
+  <br/>
+
+  [Live Demo](https://teachers-mate.vercel.app) · [Backend Repository](https://github.com/your-org/teachers-mate-backend) · [Report a Bug](https://github.com/your-org/teachers-mate-frontend/issues) · [Request a Feature](https://github.com/your-org/teachers-mate-frontend/issues)
+
+  <br/>
 </div>
 
 ---
 
-## Table of Contents
-- [Architecture Overview](#architecture-overview)
-- [Core Features](#core-features)
-- [Tech Stack & Rationale](#tech-stack--rationale)
-- [Repository Structure](#repository-structure)
-- [Page & Component Breakdown](#page--component-breakdown)
-- [Getting Started](#getting-started)
-- [Environment Configuration](#environment-configuration)
-- [Available Scripts](#available-scripts)
-- [Deployment](#deployment)
-- [Performance Characteristics](#performance-characteristics)
-- [Contributing](#contributing)
+## The Problem We're Solving
+
+Every day, educators across the world spend precious minutes — sometimes an entire class period — wrestling with paper rosters, clunky spreadsheets, and disconnected tools just to answer a simple question: *who showed up, and how often?*
+
+Teachers-Mate was built to make that question effortless to answer, and the insight effortless to act on.
+
+This frontend is the face of that mission. It's the interface a teacher opens on a Monday morning, the dashboard a coordinator checks before a progress meeting, and the roster screen that captures a semester's attendance in real time. Every design decision — from the component boundaries to the network layer to the Lighthouse scores — was made with one goal: **get out of the teacher's way and let them do their actual job.**
 
 ---
 
-## Architecture Overview
+## What Makes This Project Different
 
-Teachers-Mate Frontend is a **fully decoupled, client-side Single Page Application (SPA)** built on a component-driven architecture. It communicates exclusively with the Teachers-Mate Backend REST API over HTTPS, enforcing a clean boundary between presentation logic and server-side business rules.
+Most administrative tools are built for the institution. Teachers-Mate is built for the person.
 
+**It's fast by default.** Sub-50ms HMR in development. Under 120KB of JavaScript delivered to the browser in production. Pages that load before you've finished blinking. Speed isn't a feature here — it's a constraint we hold ourselves to.
 
-```
+**It's honest about its architecture.** There's no magic, no hidden state, no scattered fetch calls. Every network request flows through a single, auditable `api.js` layer. Every page that needs authentication says so explicitly. Every component that claims to be presentational *actually is*.
 
-┌──────────────────────────────────────────────────────────────┐
-│                        Client (Browser)                      │
-│                                                              │
-│  ┌─────────────┐    ┌──────────────┐    ┌─────────────────┐  │
-│  │  React 18   │───▶│ React Router │───▶│   Page Views    │  │
-│  │  (UI Tree)  │    │  v6 (SPA)    │    │  (Composite)    │  │
-│  └─────────────┘    └──────────────┘    └────────┬────────┘  │
-│         │                                        │            │
-│  ┌──────▼────────────────────────────────────────▼───────┐   │
-│  │                  src/api.js                            │   │
-│  │   Axios Instance · Base URL · Auth Interceptor        │   │
-│  │   Request Cancellation · Response Normalisation       │   │
-│  └──────────────────────────┬─────────────────────────────┘  │
-└─────────────────────────────┼────────────────────────────────┘
-│
-│ HTTPS / REST / JSON
-┌─────────────────────────────▼────────────────────────────────┐
-│                  Teachers-Mate Backend API                    │
-│          (Node.js · Express · PostgreSQL · JWT)               │
-└──────────────────────────────────────────────────────────────┘
+**It scales with the curriculum.** Classes grow, rosters change, schedules shift. The CRUD interfaces in Teachers-Mate are built to handle that lifecycle gracefully — not as an afterthought, but as a first-class concern.
 
-```
-
-**Key Architectural Commitments:**
-* **Central Network Layer (`api.js`)**: All HTTP transactions flow through a single, configured Axios instance. Authentication tokens, base URL routing, and error envelope normalisation are handled once globally, eliminating repetitive configurations across files.
-* **Component Demarcation**: The `src/components/` directory is reserved for stateless, purely presentational primitives. They receive data strictly via props. Stateful side-effects and business orchestrations live explicitly inside `src/pages/`.
-* **Deep-Link Resilience**: Utilizing React Router history mode implies that paths like `/dashboard` exist purely in client-side memory. The setup includes dedicated rewriting directives to ensure direct URL parsing and page-reloads work securely without generating edge HTTP 404s.
+**It works on the device a teacher actually has.** Whether that's a MacBook in a staffroom, a tablet in a classroom, or a phone between periods — the layout adapts fluidly from 320px up to widescreen monitors.
 
 ---
 
 ## Core Features
 
-* **Attendance Marking Canvas**: Session-by-session roster submission with real-time state manipulation and instant visual validation parameters.
-* **Analytics Dashboard**: Aggregated operational telemetry displaying total logs, institutional engagement rates, and at-risk metrics derived from server-side hooks.
-* **Class & Roster Interfaces**: Full CRUD administration allowing operators to mutate courses, link academic populations, and structure schedule metadata.
-* **JWT Lifecycle Guard**: Protected routing logic linked to JSON Web Token availability, featuring automatic context expiration and seamless state restoration.
-* **Device-Agnostic Layout**: Built mobile-first using fluid layout systems ensuring absolute responsiveness across devices scaling from 320px up to widescreen monitors.
+**Attendance Marking Canvas** — Session-by-session roster submission with real-time toggles and instant visual feedback. Mark a whole class present in seconds, or drill into individual records.
+
+**Analytics Dashboard** — Aggregated metrics showing total sessions logged, institutional engagement rates, and at-risk student flags derived from server-side calculations. Answers the questions coordinators ask before you've finished opening the tab.
+
+**Class & Roster Management** — Full CRUD administration for courses: create classes, link student populations, structure schedule metadata. The kind of control that used to require a spreadsheet and a prayer.
+
+**JWT Auth with Lifecycle Guards** — Protected routes backed by JSON Web Token state. Sessions expire gracefully, tokens are cleaned up automatically, and users land exactly where they need to be after logging back in.
+
+**Mobile-First Responsive Layout** — Fluid grids and spacing systems designed from the smallest screen outward. No breakpoint hacks, no hidden overflow — just layouts that work.
 
 ---
 
-## Tech Stack & Rationale
+## Architecture Overview
 
-| Tool / Dependency | Version | Role in Architecture | Technical Selection Rationale |
-| :--- | :--- | :--- | :--- |
-| **React** | 18.x | View Management & Virtual DOM | Concurrent rendering capabilities allow seamless state synchronization and fluid layout transitions during background state mutations. |
-| **Vite** | 5.x | Build System & Dev Pipeline | Leverages native ESM loading to bypass pre-bundling overhead, yielding sub-50ms Hot Module Replacement (HMR) speeds. |
-| **Tailwind CSS** | 3.x | UI Design Tokens & Styling | Utility-first compilation ensures zero runtime rendering penalty, generating minimalist production stylesheet binaries. |
-| **Axios** | 1.x | Promises-Based HTTP Client | Streamlines programmatic request interception, automatic payload parsing, and secure global token injection headers. |
-| **React Router** | 6.x | Client Routing & Page States | Offers highly scalable declarative, element-nested navigation configurations with built-in route tracking mechanics. |
-| **PostCSS** | 8.x | CSS Asset Transformation | Works natively with Vite to process and scrub CSS source text through systemic autoprefixing operations. |
+Teachers-Mate Frontend is a **fully decoupled, client-side Single Page Application**. It communicates exclusively with the Teachers-Mate Backend REST API over HTTPS, with a clean separation between what the interface knows and what the server decides.
+
+```
+┌────────────────────────────────────────────────────────────┐
+│                       Client (Browser)                     │
+│                                                            │
+│  ┌───────────┐   ┌──────────────┐   ┌──────────────────┐  │
+│  │  React 18 │──▶│ React Router │──▶│   Page Views     │  │
+│  │ (UI Tree) │   │  v6 (SPA)    │   │  (Stateful)      │  │
+│  └───────────┘   └──────────────┘   └────────┬─────────┘  │
+│        │                                     │             │
+│  ┌─────▼─────────────────────────────────────▼──────────┐  │
+│  │                     src/api.js                       │  │
+│  │   Axios · Base URL · Auth Interceptor · 401 Guard    │  │
+│  └─────────────────────────┬────────────────────────────┘  │
+└───────────────────────────┬┼────────────────────────────────┘
+                            ││ HTTPS / REST / JSON
+┌───────────────────────────▼▼────────────────────────────────┐
+│               Teachers-Mate Backend API                      │
+│           (Node.js · Express · PostgreSQL · JWT)             │
+└──────────────────────────────────────────────────────────────┘
+```
+
+Three architectural commitments underpin the entire codebase:
+
+**One network layer, zero exceptions.** All HTTP transactions run through a single configured Axios instance in `api.js`. Authentication tokens, base URL routing, and error normalisation are handled once — not scattered across a dozen components.
+
+**Pages own state. Components own nothing.** `src/components/` holds stateless, prop-driven UI primitives. Side-effects, data fetching, and business logic live exclusively inside `src/pages/`. This boundary is maintained strictly.
+
+**Deep links work.** React Router's history mode means `/dashboard` only exists in client memory. The included `vercel.json` rewrite rules ensure direct URL navigation and hard refreshes never result in a 404.
+
+---
+
+## Tech Stack
+
+| Tool | Version | Why We Chose It |
+| :--- | :--- | :--- |
+| **React** | 18.x | Concurrent rendering for seamless state transitions during background data fetches |
+| **Vite** | 5.x | Native ESM loading eliminates pre-bundling overhead; sub-50ms HMR in development |
+| **Tailwind CSS** | 3.x | Zero runtime cost; production stylesheets under 10KB through content-scan compilation |
+| **Axios** | 1.x | Request interceptors, automatic JSON parsing, and clean global token injection |
+| **React Router** | 6.x | Declarative nested routing with built-in deep-link and redirect handling |
+| **PostCSS** | 8.x | CSS transformation pipeline with automatic vendor prefixing via Autoprefixer |
 
 ---
 
 ## Repository Structure
 
-```hl
-frontend/
-├── index.html                   # Core single-page entry point — mounts the main React architecture
-├── package.json                 # Dependency manifests, configuration maps, and pipeline scripts
-├── vite.config.js               # Core compiler options, plugin paths, and module aliasing configs
-├── tailwind.config.js           # Structural theme extensions, spacing limits, and content purgers
-├── postcss.config.js            # PostCSS engine pipeline wiring (Tailwind CSS and Autoprefixer)
-├── public/
-│   └── teacher-svgrepo-com.svg  # Production logo graphic served statically at the root index
-└── src/
-    ├── main.jsx                 # Bootstrapping module initializing React Dom inside StrictMode
-    ├── App.jsx                  # Primary routing root mapping active URL components to page files
-    ├── index.css                # Style gateway embedding foundational Tailwind compilation boundaries
-    ├── api.js                   # Network instance handling global Axios base URLs and Auth headers
-    ├── components/              # Pure presentational UI elements driven solely via properties
-    │   ├── Card.jsx             # Grid wrapper surface managing padding and layout spacing standards
-    │   ├── HeroSection.jsx      # Splash landing area showing primary taglines and initial Call-To-Action buttons
-    │   └── Navbar.jsx           # Main navigational controller parsing access tokens to display visibility rules
-    └── pages/                   # State-owning containers orchestrating page-wide network resources
-        ├── Attendance.jsx       # Marks and records student attendance lists for specific sessions
-        ├── Classes.jsx          # Administrative controller handling full course generation and deletions
-        ├── Dashboard.jsx        # Aggregates operational performance stats and metrics grids
-        ├── LandingPage.jsx      # Top of funnel home view leading into authorization modules
-        ├── SignInPage.jsx       # Interface handling credential checks and local storage token management
-        └── SignUpPage.jsx       # Validates registrations before initiating automated logins
-
 ```
-
----
-
-## Page & Component Breakdown
-
-### System Architecture Layouts
-
-#### `src/api.js` — Base Networking Layer
-
-The central network gateway managing downstream resource operations. It reads configuration data explicitly via `import.meta.env.VITE_API_URL` to prevent unsafe client-side environmental leakage. A structural request interceptor injects matching `Authorization: Bearer <token>` data dynamically out of `localStorage`, while a response boundary catches `401 Unauthorized` flags to automatically clean old browser tokens and enforce logins.
-
-#### `src/App.jsx` — Route & Access Architecture
-
-Constructs the UI route engine through declarative path declarations. Secure endpoints are mapped behind dynamic logical wrappers that check token existence in local storage before exposing protected page layouts. Unauthenticated access attempts on hidden paths drop clients instantly into `/signin`.
-
-### Core Application Views (`src/pages/`)
-
-* **`LandingPage.jsx`**: Public onboarding interface parsing system introduction messages and routing users cleanly toward setup tasks.
-* **`SignInPage.jsx`**: Interface validating credential arrays, standardizing token storage, and guiding authorized operators down to `/dashboard`.
-* **`SignUpPage.jsx`**: Validates registration parameters locally, submits onboarding payloads to the server, and initiates automatic logins.
-* **`Dashboard.jsx`**: Orchestrates multiple background data fetches to map aggregated performance analytics across custom card components.
-* **`Classes.jsx`**: Administrative view for course layout mutations, pagination configurations, and systemic CRUD operations.
-* **`Attendance.jsx`**: Operational workspace mapping class lists with interactive toggles to securely log individual student attendance records.
-
-### Shared UI Components (`src/components/`)
-
-* **`Navbar.jsx`**: Persistent system navbar tracking user authentication status to adjust user links and safely perform token destructions upon logout.
-* **`Card.jsx`**: Reusable container panel that normalizes shadows, borders, and paddings across modular system dashboards.
-* **`HeroSection.jsx`**: Static landing layout designed to establish the core value propositions and initial engagement points.
+frontend/
+├── index.html                   # Single-page entry point — mounts the React root
+├── package.json                 # Dependencies and pipeline scripts
+├── vite.config.js               # Build configuration and module aliases
+├── tailwind.config.js           # Theme extensions and content purge paths
+├── postcss.config.js            # PostCSS pipeline (Tailwind + Autoprefixer)
+├── vercel.json                  # SPA deep-link rewrite rules for edge deployment
+├── public/
+│   └── teacher-svgrepo-com.svg  # App logo, served statically at the root
+└── src/
+    ├── main.jsx                 # React DOM bootstrap inside StrictMode
+    ├── App.jsx                  # Route definitions and protected route wrappers
+    ├── index.css                # Tailwind base/components/utilities directives
+    ├── api.js                   # Central Axios instance — auth, base URL, 401 guard
+    ├── components/              # Stateless, prop-driven UI primitives
+    │   ├── Card.jsx             # Reusable surface with consistent shadow and padding
+    │   ├── HeroSection.jsx      # Landing splash with tagline and CTA buttons
+    │   └── Navbar.jsx           # Auth-aware navigation with logout handling
+    └── pages/                   # Stateful views owning their own data and effects
+        ├── Attendance.jsx       # Session roster with interactive presence toggles
+        ├── Classes.jsx          # Course CRUD — create, list, update, delete
+        ├── Dashboard.jsx        # Aggregated metrics and at-risk analytics
+        ├── LandingPage.jsx      # Public entry point routing toward auth
+        ├── SignInPage.jsx       # Credential validation and token storage
+        └── SignUpPage.jsx       # Registration with automatic post-signup login
+```
 
 ---
 
 ## Getting Started
 
-### Environmental Prerequisites
+### Prerequisites
 
-* **Node.js**: Version `>= 18.0.0`
-* **Package Manager**: `npm >= 9.0.0`
-* **Target Environment**: An instance of the [Teachers-Mate Backend](https://github.com/your-org/teachers-mate-backend) processing operations locally (Default standard target: `http://localhost:10000`).
+- **Node.js** `>= 18.0.0`
+- **npm** `>= 9.0.0`
+- A running instance of the [Teachers-Mate Backend](https://github.com/your-org/teachers-mate-backend) (defaults to `http://localhost:10000`)
 
-### Application Installation Lifecycle
+### Installation
 
 ```bash
-# 1. Clone the specific operational repository target
-git clone [https://github.com/your-org/Teachers-Mate-Frontend.git](https://github.com/your-org/Teachers-Mate-Frontend.git)
+# 1. Clone the repository
+git clone https://github.com/your-org/Teachers-Mate-Frontend.git
 cd Teachers-Mate-Frontend
 
-# 2. Run clean module setup routines
+# 2. Install dependencies
 npm install
 
-# 3. Establish runtime configuration files from template files
+# 3. Create your local environment config
 cp .env.example .env
+# Open .env and set VITE_API_URL to your backend address
 
-# 4. Open the generated .env and align the VITE_API_URL settings to match local servers
-# 5. Boot the native development configuration server
+# 4. Start the development server
 npm run dev
-
 ```
 
-Your system will spin up locally on **`http://localhost:5173`**, complete with Hot Module Replacement tracking file changes across files instantly.
+Your app will be live at **`http://localhost:5173`** with Hot Module Replacement active.
 
 ---
 
 ## Environment Configuration
 
-Configure project states by copying the standard layout pattern tracking parameters in `.env.example`. Make sure local configuration assets are listed under `.gitignore` targets to exclude infrastructure secrets from version control tracking.
-
 ```env
-# ── TEACHERS-MATE UPSTREAM NETWORK ADDRESSING ────────────────────────────
-# The central base URL target accessed by the frontend Axios client wrapper.
-# These parameters are evaluated and baked directly into the bundle by Vite.
+# ── Backend API Target ────────────────────────────────────────────────────
+# Baked into the bundle by Vite at build time. The VITE_ prefix is required —
+# variables without it are intentionally excluded from the client bundle.
 
-# Local Deployment Configuration
+# Local development
 VITE_API_URL=http://localhost:10000
 
-# Staging Environment Target Examples
-# VITE_API_URL=[https://staging-api.teachers-mate.com](https://staging-api.teachers-mate.com)
+# Staging
+# VITE_API_URL=https://staging-api.teachers-mate.com
 
-# Production Environment Config Note: Ensure these parameters are written to 
-# hosting provider dashboard environmental settings rather than being committed to files.
-# VITE_API_URL=[https://api.teachers-mate.com](https://api.teachers-mate.com)
-
+# Production — set this in your hosting provider's dashboard, not in a committed file
+# VITE_API_URL=https://api.teachers-mate.com
 ```
 
-> **Why the `VITE_` prefix matter?** Vite explicitly searches for the `VITE_` prefix to determine if an environmental property is cleared for client bundle inclusion. Variables missing this precise definition are omitted entirely during bundling processes, guarding production infrastructure properties against unauthorized browser leaks.
+> **Why `VITE_` matters:** Vite only exposes variables prefixed with `VITE_` to the client bundle. Everything else is stripped at build time — keeping server secrets, internal infrastructure details, and private keys from ever reaching the browser.
 
 ---
 
 ## Available Scripts
 
-The project includes pre-configured commands to manage development, compilation, and linting procedures:
-
 ```bash
-# Boot up the lightweight local Vite server environment
-npm run dev
-
-# Compile full production builds featuring aggressive code purging and static code optimization
-npm run build
-
-# Stand up local previews of standard distribution folders to validate build health before pushing
-npm run preview
-
-# Evaluate code rules against files across directories using structural ESLint engines
-npm run lint
-
+npm run dev       # Start local Vite dev server with HMR
+npm run build     # Compile production build with tree-shaking and code splitting
+npm run preview   # Preview the production build locally before deploying
+npm run lint      # Run ESLint across all source files
 ```
 
 ---
 
 ## Deployment
 
-### Edge Platform Hosting (Vercel Integration)
-
-The repository includes configuration recipes tailored to manage continuous integration directly via the Vercel platform. Commits tracking toward target production branches launch deployments automatically.
-
-**`vercel.json` Rewrite Specifications:**
+The repository ships with a `vercel.json` configured for zero-setup deployment on Vercel. Pushes to the production branch trigger automatic deploys.
 
 ```json
 {
@@ -258,44 +219,60 @@ The repository includes configuration recipes tailored to manage continuous inte
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
-
 ```
 
-> **Why this configuration rule is essential:** Because SPA applications manage application states in client-side memory, edge nodes lack explicit files on disk matching endpoints like `/dashboard` or `/classes`. Without deep-link mapping instructions, page refreshes on these subpaths drop users into edge 404 sheets. This rewrite forces edge nodes to cleanly pass unmapped lookups down into your central `index.html` file, preserving routing context.
+This rewrite is not optional. Because Teachers-Mate is a Single Page Application, routes like `/dashboard` and `/classes` have no corresponding files on disk at the edge. Without this rule, a hard refresh on any non-root path returns a 404. The rewrite ensures all unmatched paths fall back to `index.html`, where React Router takes over.
+
+For other hosting providers: configure an equivalent catch-all rewrite to `index.html` in your platform settings (Netlify `_redirects`, Nginx `try_files`, etc.).
 
 ---
 
-## Performance Characteristics
+## Performance
 
-> Bundled execution targets analyzed against live production builds running inside Lighthouse environments tracking across standard mobile 3G profiles.
+Measured against production builds on Lighthouse, simulated mobile 3G:
 
-* **First Contentful Paint (FCP)**: `< 1.0s` — Instant access to structural scaffolding.
-* **Largest Contentful Paint (LCP)**: `< 1.8s` — Full visual state visibility.
-* **Time to Interactive (TTI)**: `< 2.2s` — Functional interfaces available almost immediately.
-* **Cumulative Layout Shift (CLS)**: `~0.02` — Rigid layouts that eliminate layout jumping during content updates.
-* **Total JavaScript Delivery Payload**: `< 120KB (gzip)` — Made possible by combining module tree-shaking with route-level code splitting.
-* **Global Stylesheet Footprint**: `< 10KB (gzip)` — Achieved through Tailwind's content-scanning compile stages.
+| Metric | Target | What It Means |
+| :--- | :--- | :--- |
+| **First Contentful Paint** | `< 1.0s` | Structural scaffolding appears almost instantly |
+| **Largest Contentful Paint** | `< 1.8s` | Full visual content visible well within Google's "good" threshold |
+| **Time to Interactive** | `< 2.2s` | Buttons, forms, and navigation respond almost immediately |
+| **Cumulative Layout Shift** | `~0.02` | Layouts don't jump — content lands where it stays |
+| **JS Payload (gzip)** | `< 120KB` | Kept small through tree-shaking and route-level code splitting |
+| **CSS Payload (gzip)** | `< 10KB` | Tailwind's content scan eliminates every unused utility class |
 
 ---
 
 ## Contributing
 
-1. Fork the operational code tree and establish tracking branches based off the `main` trunk:
+We welcome contributions from anyone who believes teacher tooling should be excellent.
 
 ```bash
-   git checkout -b feat/your-feature-name
+# 1. Fork and create a feature branch
+git checkout -b feat/your-feature-name
 
+# 2. Make your changes, following Conventional Commits
+#    feat: add bulk attendance submission
+#    fix: resolve token refresh race condition
+#    refactor: simplify Dashboard data fetching
+
+# 3. Verify everything passes
+npm run lint
+
+# 4. Open a Pull Request with a clear description and screenshots if applicable
 ```
 
-2. Commit logic steps using formalized [Conventional Commits](https://www.conventionalcommits.org/) standards (`feat:`, `fix:`, `refactor:`).
-3. Ensure all local quality checks scale smoothly without errors by running clean verification passes:
-
-```bash
-   npm run lint
-
-```
-
-4. File explicit Pull Requests outlining targeted additions alongside interface screenshots or validation explanations.
+Please keep PRs focused — one feature or fix per pull request makes review much faster.
 
 ---
 
+## License
+
+Distributed under the [MIT License](LICENSE). Use it, fork it, build on it.
+
+---
+
+<div align="center">
+  <br/>
+  <p>Built with care for the people who shape the next generation.</p>
+  <br/>
+</div>
