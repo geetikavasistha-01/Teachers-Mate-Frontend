@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import API from '../api';
+
 
 const StatusButton = ({ status, isActive, onClick }) => {
   const activeStyles = {
@@ -101,10 +102,21 @@ export default function Attendance() {
   const [summaryLoading, setSummaryLoading] = useState(false)
 
   useEffect(() => {
-    fetch(`${API}/courses`)
-      .then(r => r.json())
-      .then(d => { if (d.success) setCourses(d.data || []) })
-      .catch(err => console.error('Courses fetch error:', err))
+    setCoursesLoading(true)
+    API.get('/courses')
+      .then(r => { 
+        if (r.data.success) {
+          const coursesArray = Array.isArray(r.data) ? r.data : []
+          setCourses(coursesArray)
+        } else {
+          console.error('Invalid API response structure:', r)
+          setCourses([])
+        }
+      })
+      .catch(err => {
+        console.error('Courses fetch error:', err)
+        setCourses([])
+      })
       .finally(() => setCoursesLoading(false))
   }, [])
 
@@ -114,13 +126,14 @@ export default function Attendance() {
     setMarkError('')
     setStudentsLoading(true)
     try {
-      const res = await fetch(`${API}/students/course/${course._id}`)
-      const data = await res.json()
-      const list = data.data || []
-      setStudents(list)
-      const initial = {}
-      list.forEach(s => { initial[s._id] = 'present' })
-      setAttendance(initial)
+      const res = await API.get(`/students/course/${course._id}`)
+      if (res.data.success) {
+        const list = res.data.data || []
+        setStudents(list)
+        const initial = {}
+        list.forEach(s => { initial[s._id] = 'present' })
+        setAttendance(initial)
+      }
     } catch (err) {
       console.error('Students fetch error:', err)
       setStudents([])
@@ -150,20 +163,15 @@ export default function Attendance() {
         studentId: s._id,
         status: attendance[s._id] || 'present'
       }))
-      const res = await fetch(`${API}/attendance/mark`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          courseId: selectedCourse._id,
-          date: selectedDate,
-          records
-        })
+      const res = await API.post('/attendance/mark', {
+        courseId: selectedCourse._id,
+        date: selectedDate,
+        records
       })
-      const data = await res.json()
-      if (data.success) {
+      if (res.data.success) {
         setSaved(true)
       } else {
-        setMarkError(data.message || 'Failed to save attendance')
+        setMarkError(res.data.message || 'Failed to save attendance')
       }
     } catch (err) {
       console.error('Save attendance error:', err)
@@ -181,10 +189,8 @@ export default function Attendance() {
     if (!courseId) return
     setHistoryLoading(true)
     try {
-      const res = await fetch(`${API}/attendance/history/${courseId}`)
-      const data = await res.json()
-      // API returns array of date strings
-      if (data.success) setHistoryDates(data.data || [])
+      const res = await API.get(`/attendance/history/${courseId}`)
+      if (res.data.success) setHistoryDates(res.data.data || [])
     } catch (err) {
       console.error('History fetch error:', err)
     } finally {
@@ -192,6 +198,25 @@ export default function Attendance() {
     }
   }
 
+   {
+  const [courses, setCourses] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        setLoading(true)
+        const res = await API.get('/courses')
+        if (res.data.success) setCourses(res.data.data || [])
+      } catch (err) {
+        console.error('Courses fetch error:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCourses()
+  }, [])
   const handleDateClick = async (date) => {
     // Toggle: clicking same date again collapses it
     if (expandedDate === date) {
@@ -203,10 +228,8 @@ export default function Attendance() {
     setExpandedRecords([])
     setDateRecordsLoading(true)
     try {
-      const res = await fetch(`${API}/attendance/${historyCourseId}/${date}`)
-      const data = await res.json()
-      // Each record has { studentId: { name, rollNumber }, status }
-      if (data.success) setExpandedRecords(data.data || [])
+      const res = await API.get(`/attendance/${historyCourseId}/${date}`)
+      if (res.data.success) setExpandedRecords(res.data.data || [])
     } catch (err) {
       console.error('Date records fetch error:', err)
     } finally {
@@ -220,10 +243,8 @@ export default function Attendance() {
     if (!courseId) return
     setSummaryLoading(true)
     try {
-      const res = await fetch(`${API}/attendance/summary/${courseId}`)
-      const data = await res.json()
-      // Each item: { student: { _id, name, rollNumber }, total, present, absent, late, percentage }
-      if (data.success) setSummaryData(data.data || [])
+      const res = await API.get(`/attendance/summary/${courseId}`)
+      if (res.data.success) setSummaryData(res.data.data || [])
     } catch (err) {
       console.error('Summary fetch error:', err)
     } finally {
@@ -329,7 +350,7 @@ export default function Attendance() {
                   />
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {courses.map(course => (
+                    {Array.isArray(courses) && courses.map(course => (
                       <CourseCard key={course._id} course={course} onClick={() => handleSelectCourse(course)} />
                     ))}
                   </div>
@@ -477,7 +498,7 @@ export default function Attendance() {
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#1A7F5A] bg-white"
               >
                 <option value="">Select a course to view history</option>
-                {courses.map(c => (
+                {Array.isArray(courses) && courses.map(c => (
                   <option key={c._id} value={c._id}>{c.code} — {c.name}</option>
                 ))}
               </select>
@@ -605,4 +626,5 @@ export default function Attendance() {
       </div>
     </div>
   )
+}
 }

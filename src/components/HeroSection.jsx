@@ -1,5 +1,7 @@
+import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react'
 import { useNavigate } from 'react-router-dom'
-import Card from './Card'
+import Card from './Card'   
+
 
 export default function HeroSection() {
   const navigate = useNavigate()
@@ -33,6 +35,7 @@ export default function HeroSection() {
 
         {/* Buttons */}
         <div className="flex flex-row gap-5 flex-wrap mb-6">
+          
           <button
             onClick={() => navigate('/sign-up')}
             className="bg-gradient-to-r from-[#1A7F5A] to-[#2ECC8D] text-white text-sm font-medium px-7 py-3.5 rounded-[14px] shadow-[0_4px_20px_rgba(26,127,90,0.3)] hover:shadow-[0_8px_28px_rgba(26,127,90,0.4)] hover:-translate-y-0.5 hover:scale-[1.02] transition-all duration-200"
@@ -99,13 +102,14 @@ export default function HeroSection() {
             student progress &mdash; all in one unified workspace
             built for college educators.</div>
           </div>
-          <button className="self-start bg-white/20 hover:bg-white/30 border border-white/30 text-white text-[0.78rem] font-medium px-4 py-2 rounded-[10px] transition-all duration-200">
+          <button onClick={() => navigate('/sign-in')} className="self-start bg-white/20 hover:bg-white/30 border border-white/30 text-white text-[0.78rem] font-medium px-4 py-2 rounded-[10px]">
+             
             Access Portal &rarr;
           </button>
         </Card>
 
         {/* Card 3 - 98% Retention */}
-        <Card className="text-center py-7">
+        <Card className="text-center py-7 transition-none hover:shadow-none hover:translate-y-0 ring-0">
           <div className="font-display font-black text-[3.2rem] text-[#1A7F5A] leading-none mb-1">94%</div>
           <div className="font-display font-bold text-[#111827] text-base mb-1">Course Completion</div>
           <div className="text-[0.75rem] text-gray-400">Across all departments this semester</div>

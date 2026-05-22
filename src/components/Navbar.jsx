@@ -6,15 +6,18 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm">
-      <div className="max-w-7xl mx-auto px-6 h-[70px] flex items-center justify-between gap-8">
+      <div className="max-w-7xl mx-auto px-6 h-[70px] flex items-center  gap-96">
         {/* Logo */}
-        <div className="flex items-center gap-2">
+        <div 
+          onClick={() => navigate('/')}
+          className="flex items-center gap- cursor-pointer hover:opacity-80 transition-opacity"
+        >
           <img 
             src="/teacher-svgrepo-com.svg" 
             alt="Teacher's Mate Logo" 
             className="w-8 h-8"
           />
-          <div className="font-display font-black text-xl tracking-tight">
+          <div className="font-display flex font-black text-xl tracking-tight gap-1">
             <span className="text-[#1A7F5A]">Teacher's</span>
             <span className="text-[#111827]"> Mate</span>
           </div>
@@ -29,15 +32,24 @@ export default function Navbar() {
         </div>
 
         {/* Auth Buttons */}
-        <SignedOut>
-          <button
+        <SignedOut >
+          <div className='flex gap-2'>
+            <button
             onClick={() => navigate('/sign-in')}
-            className="bg-[#4F6EF7] hover:bg-[#3550d4] text-white text-sm font-medium px-5 py-2 rounded-xl transition-all duration-200 hover:-translate-y-0.5"
+            className="bg-[#4F6EF7] hover:bg-[#3550d4] text-white text-sm font-medium px-3 py-2 rounded-xl transition-all duration-200 hover:-translate-y-0.5"
           >
             Faculty Login
           </button>
-        </SignedOut>
 
+           <button
+            onClick={() => navigate('/sign-up')}
+            className="bg-[#4F6EF7] hover:bg-[#3550d4] text-white text-sm font-medium px-5 py-2 rounded-xl transition-all duration-200 hover:-translate-y-0.5"
+          >
+            Sign Up
+          </button>
+          </div>
+        </SignedOut>
+         
         <SignedIn>
           <UserButton afterSignOutUrl="/" />
         </SignedIn>

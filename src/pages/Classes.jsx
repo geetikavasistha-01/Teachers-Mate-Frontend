@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import API from '../api';
@@ -18,6 +18,18 @@ export default function Classes() {
   const [studentsLoading, setStudentsLoading] = useState(false)
   const [addingStudent, setAddingStudent] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef(null)
+  
+  // Upload modal state
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [selectedFile, setSelectedFile] = useState(null)
+  const [uploadError, setUploadError] = useState('')
+  const [uploadSuccess, setUploadSuccess] = useState('')
+  
+  // Student editing state
+  const [editingStudent, setEditingStudent] = useState(null)
+  const [editingStudentData, setEditingStudentData] = useState({})
   
   const [courseForm, setCourseForm] = useState({
     name: '', code: '', departmentId: '', semester: '', batch: '', academicYear: ''
@@ -212,6 +224,175 @@ export default function Classes() {
     }
   }
 
+  // Handle file selection for upload
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0]
+    if (!file) {
+      setSelectedFile(null)
+      return
+    }
+
+    // Client-side validation
+    const validTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      'text/csv',
+      'application/csv'
+    ]
+    
+    if (!validTypes.includes(file.type)) {
+      setUploadError('Please upload a CSV or Excel file (.csv, .xlsx, or .xls)')
+      setSelectedFile(null)
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('File size must not exceed 5MB')
+      setSelectedFile(null)
+      return
+    }
+
+    setSelectedFile(file)
+    setUploadError('')
+  }
+
+  // Bulk upload students from CSV/XLSX
+  const handleBulkUpload = async () => {
+    if (!selectedFile) return
+
+    if (!selectedCourse) {
+      setUploadError('Please select a course first')
+      return
+    }
+
+    const formData = new FormData()
+    formData.append('file', selectedFile)
+    formData.append('classId', selectedCourse._id)
+
+    try {
+      setUploading(true)
+      setUploadError('')
+      
+      const response = await API.post('/students/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+
+      if (response.data.success) {
+        // Close modal and reset
+        setShowUploadModal(false)
+        setSelectedFile(null)
+        setUploadError('')
+        
+        // Show success message
+        const { added, skipped, errors } = response.data
+        let successMessage = `${added} students added`
+        if (skipped > 0) {
+          successMessage += ` \u2022 ${skipped} skipped`
+        }
+        setUploadSuccess(successMessage)
+        
+        // Show errors if any
+        if (errors && errors.length > 0) {
+          const errorMessages = errors.map(err => `row ${err.row}: ${err.message}`).join(', ')
+          setTimeout(() => {
+            alert(`${errors.length} rows had issues: ${errorMessages}`)
+          }, 100)
+        }
+        
+        // Refetch students for current course
+        if (selectedCourse) {
+          fetchStudents(selectedCourse._id)
+        }
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => setUploadSuccess(''), 3000)
+      } else {
+        setUploadError('Upload failed: ' + response.data.message)
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      setUploadError('Upload failed: ' + (error.response?.data?.message || error.message))
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  // Open upload modal
+  const openUploadModal = () => {
+    setShowUploadModal(true)
+    setSelectedFile(null)
+    setUploadError('')
+    setUploadSuccess('')
+  }
+
+  // Open upload modal for specific course
+  const openUploadModalForCourse = (course) => {
+    setSelectedCourse(course)
+    setShowUploadModal(true)
+    setSelectedFile(null)
+    setUploadError('')
+    setUploadSuccess('')
+  }
+
+  // Close upload modal
+  const closeUploadModal = () => {
+    setShowUploadModal(false)
+    setSelectedFile(null)
+    setUploadError('')
+    setUploadSuccess('')
+  }
+
+  // Start editing student
+  const startEditingStudent = (student) => {
+    setEditingStudent(student._id)
+    setEditingStudentData({
+      name: student.name || '',
+      rollNumber: student.rollNumber || '',
+      email: student.email || '',
+      semester: student.semester || '',
+      batch: student.batch || '',
+      section: student.section || ''
+    })
+  }
+
+  // Handle editing student data changes
+  const handleEditStudentChange = (field, value) => {
+    setEditingStudentData(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
+  // Save student edits
+  const saveStudentEdits = async () => {
+    try {
+      const response = await API.put(`/students/${editingStudent}`, editingStudentData)
+      if (response.data.success) {
+        // Update local state
+        setStudents(prev => prev.map(student => 
+          student._id === editingStudent 
+            ? { ...student, ...editingStudentData }
+            : student
+        ))
+        // Reset editing state
+        setEditingStudent(null)
+        setEditingStudentData({})
+      } else {
+        alert('Error: ' + response.data.message)
+      }
+    } catch (error) {
+      alert('Update failed: ' + (error.response?.data?.message || error.message))
+    }
+  }
+
+  // Cancel student edits
+  const cancelStudentEdits = () => {
+    setEditingStudent(null)
+    setEditingStudentData({})
+  }
+
   // Filter courses
   const filteredCourses = courses.filter(course => {
     const matchesDept = !filters.department || course.departmentId?._id === filters.department
@@ -293,16 +474,18 @@ export default function Classes() {
                   ))}
                 </select>
               </div>
-              <button
-                onClick={() => {
-                  setEditingCourse(null)
-                  setCourseForm({ name: '', code: '', departmentId: '', semester: '', batch: '', academicYear: '' })
-                  setShowAddCourse(true)
-                }}
-                className="bg-[#1A7F5A] hover:bg-[#155e42] text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-all"
-              >
-                + Add Course
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setEditingCourse(null)
+                    setCourseForm({ name: '', code: '', departmentId: '', semester: '', batch: '', academicYear: '' })
+                    setShowAddCourse(true)
+                  }}
+                  className="bg-[#1A7F5A] hover:bg-[#155e42] text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-all"
+                >
+                  + Add Course
+                </button>
+              </div>
             </div>
 
             {/* Add/Edit Course Modal */}
@@ -377,6 +560,81 @@ export default function Classes() {
               </div>
             )}
 
+            {/* Upload Modal */}
+            {showUploadModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-2xl p-6 shadow-xl border border-gray-100 max-w-md w-full mx-4">
+                  <h2 className="font-bold text-[#111827] mb-4">
+                    {selectedCourse ? `Upload for ${selectedCourse.name}` : 'Upload Student Data'}
+                  </h2>
+                  
+                  {/* Pre-selected Course Info */}
+                  {selectedCourse && (
+                    <div className="bg-gray-50 border border-gray-200 px-4 py-3 rounded-lg mb-4">
+                      <p className="text-sm font-medium text-gray-700">Course pre-selected:</p>
+                      <p className="text-sm text-gray-600">{selectedCourse.code} - {selectedCourse.name}</p>
+                      <p className="text-xs text-gray-500">Semester {selectedCourse.semester} · Batch {selectedCourse.batch}</p>
+                    </div>
+                  )}
+                  
+                  {/* Success Message */}
+                  {uploadSuccess && (
+                    <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4">
+                      {uploadSuccess} <span className="text-green-600">List updated automatically</span>
+                    </div>
+                  )}
+                  
+                  {/* Error Message */}
+                  {uploadError && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+                      {uploadError}
+                    </div>
+                  )}
+                  
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Drop file here or browse (.csv, .xlsx, .xls max 5 MB)
+                    </label>
+                    <input
+                      type="file"
+                      accept=".csv,.xlsx,.xls"
+                      onChange={handleFileSelect}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#1A7F5A]"
+                    />
+                    {selectedFile && (
+                      <p className="text-sm text-gray-500 mt-2">
+                        Selected: {selectedFile.name}
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleBulkUpload}
+                      disabled={!selectedFile || uploading}
+                      className="flex-1 bg-[#1A7F5A] hover:bg-[#155e42] disabled:bg-gray-400 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2"
+                    >
+                      {uploading ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          Uploading...
+                        </>
+                      ) : (
+                        'Upload'
+                      )}
+                    </button>
+                    <button
+                      onClick={closeUploadModal}
+                      disabled={uploading}
+                      className="flex-1 text-sm text-gray-500 hover:text-gray-800 px-5 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Courses Grid */}
             {loading ? (
               <p className="text-gray-400 text-sm">Loading courses...</p>
@@ -412,6 +670,15 @@ export default function Classes() {
                         className="text-xs bg-[#E6F4EF] text-[#1A7F5A] px-3 py-1 rounded-lg hover:bg-[#1A7F5A] hover:text-white transition-all"
                       >
                         View Students →
+                      </button>
+                      <button
+                        onClick={() => openUploadModalForCourse(course)}
+                        className="text-xs bg-[#E6F4EF] text-[#1A7F5A] hover:text-[#e8fff6] px-3 py-1 rounded-lg hover:bg-[#11573f] transition-all flex items-center gap-1"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        Upload students
                       </button>
                       <button
                         onClick={() => handleDeleteCourse(course._id)}
@@ -549,8 +816,10 @@ export default function Classes() {
                         <tr>
                           <th className="text-left text-xs font-medium text-gray-400 px-5 py-3">Name</th>
                           <th className="text-left text-xs font-medium text-gray-400 px-5 py-3">Roll Number</th>
+                          <th className="text-left text-xs font-medium text-gray-400 px-5 py-3">Email</th>
                           <th className="text-left text-xs font-medium text-gray-400 px-5 py-3">Semester</th>
                           <th className="text-left text-xs font-medium text-gray-400 px-5 py-3">Batch</th>
+                          <th className="text-left text-xs font-medium text-gray-400 px-5 py-3">Section</th>
                           <th className="text-right text-xs font-medium text-gray-400 px-5 py-3">Action</th>
                         </tr>
                       </thead>
@@ -562,17 +831,112 @@ export default function Classes() {
                           )
                           .map((student, idx) => (
                             <tr key={student._id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
-                              <td className="px-5 py-3 text-sm font-medium text-[#111827]">{student.name}</td>
-                              <td className="px-5 py-3 text-sm text-gray-500">{student.rollNumber}</td>
-                              <td className="px-5 py-3 text-sm text-gray-500">Sem {student.semester}</td>
-                              <td className="px-5 py-3 text-sm text-gray-500">{student.batch || '-'}</td>
+                              <td className="px-5 py-3 text-sm">
+                                {editingStudent === student._id ? (
+                                  <input
+                                    type="text"
+                                    value={editingStudentData.name}
+                                    onChange={(e) => handleEditStudentChange('name', e.target.value)}
+                                    className="w-full px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none focus:border-blue-500"
+                                  />
+                                ) : (
+                                  <span className="font-medium text-[#111827]">{student.name || '-'}</span>
+                                )}
+                              </td>
+                              <td className="px-5 py-3 text-sm">
+                                {editingStudent === student._id ? (
+                                  <input
+                                    type="text"
+                                    value={editingStudentData.rollNumber}
+                                    onChange={(e) => handleEditStudentChange('rollNumber', e.target.value)}
+                                    className="w-full px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none focus:border-blue-500"
+                                  />
+                                ) : (
+                                  <span className="text-gray-500">{student.rollNumber || '-'}</span>
+                                )}
+                              </td>
+                              <td className="px-5 py-3 text-sm">
+                                {editingStudent === student._id ? (
+                                  <input
+                                    type="email"
+                                    value={editingStudentData.email}
+                                    onChange={(e) => handleEditStudentChange('email', e.target.value)}
+                                    className="w-full px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none focus:border-blue-500"
+                                  />
+                                ) : (
+                                  <span className="text-gray-500">{student.email || '-'}</span>
+                                )}
+                              </td>
+                              <td className="px-5 py-3 text-sm">
+                                {editingStudent === student._id ? (
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    max="8"
+                                    value={editingStudentData.semester}
+                                    onChange={(e) => handleEditStudentChange('semester', e.target.value)}
+                                    className="w-full px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none focus:border-blue-500"
+                                  />
+                                ) : (
+                                  <span className="text-gray-500">Sem {student.semester || '-'}</span>
+                                )}
+                              </td>
+                              <td className="px-5 py-3 text-sm">
+                                {editingStudent === student._id ? (
+                                  <input
+                                    type="text"
+                                    value={editingStudentData.batch}
+                                    onChange={(e) => handleEditStudentChange('batch', e.target.value)}
+                                    className="w-full px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none focus:border-blue-500"
+                                  />
+                                ) : (
+                                  <span className="text-gray-500">{student.batch || '-'}</span>
+                                )}
+                              </td>
+                              <td className="px-5 py-3 text-sm">
+                                {editingStudent === student._id ? (
+                                  <input
+                                    type="text"
+                                    value={editingStudentData.section}
+                                    onChange={(e) => handleEditStudentChange('section', e.target.value)}
+                                    className="w-full px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none focus:border-blue-500"
+                                  />
+                                ) : (
+                                  <span className="text-gray-500">{student.section || '-'}</span>
+                                )}
+                              </td>
                               <td className="px-5 py-3 text-right">
-                                <button
-                                  onClick={() => handleRemoveStudent(student._id)}
-                                  className="text-xs text-red-400 hover:text-red-600 transition-colors"
-                                >
-                                  Remove
-                                </button>
+                                {editingStudent === student._id ? (
+                                  <div className="flex gap-2 justify-end">
+                                    <button
+                                      onClick={saveStudentEdits}
+                                      className="text-xs bg-green-50 text-green-600 px-2 py-1 rounded hover:bg-green-100 transition-colors"
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      onClick={cancelStudentEdits}
+                                      className="text-xs bg-gray-50 text-gray-600 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="flex gap-2 justify-end">
+                                    <button
+                                      onClick={() => startEditingStudent(student)}
+                                      className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 transition-colors"
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      onClick={() => handleRemoveStudent(student._id)}
+                                      className="text-xs text-red-400 hover:text-red-600 transition-colors"
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+                                )}
                               </td>
                             </tr>
                           ))}
